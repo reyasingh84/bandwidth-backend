@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enums import Role, TaskCategory, TaskPriority, TaskStatus, UserDepartment
+from models.enums import Role, TaskCategory, TaskPriority, TaskStatus, UserDepartment
 
 @dataclass
 class User:

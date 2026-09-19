@@ -69,7 +69,7 @@ class UserRepository:
         finally:
             cursor.close()
 
-    def get_by_email(self, email:str):
+    def get_by_email(self, email: str) -> User | None:
         cursor = self.connection.cursor()
 
         query = """
@@ -79,8 +79,8 @@ class UserRepository:
 
         try:
             cursor.execute(query, (email,))
-            user_by_email = cursor.fetchone()
-            return user_by_email
+            user = cursor.fetchone()
+            return User(*user) if user else None
         finally:
             cursor.close()
 
