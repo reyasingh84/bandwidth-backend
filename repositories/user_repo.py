@@ -42,7 +42,7 @@ class UserRepository:
             cursor.close()
 
 
-    def get_users(self):
+    def get_users(self)-> list[User]:
         cursor = self.connection.cursor()
 
         query = """
@@ -51,7 +51,26 @@ class UserRepository:
         try:
             cursor.execute(query)
             users = cursor.fetchall()
-            return users
+            users_list = []
+            for user in users:
+                users_list.append(User(*user))
+            return users_list
+        finally:
+            cursor.close()
+
+    def get_user_by_id(self, user_id: str)-> User|None:
+        cursor = self.connection.cursor()
+        
+        query = """
+            SELECT * FROM users where id = %s
+        """
+        try:
+            cursor.execute(query, (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                return None
+
+            return User(*user)
         finally:
             cursor.close()
 
@@ -65,7 +84,10 @@ class UserRepository:
         try:
             cursor.execute(query)
             active_users = cursor.fetchall()
-            return active_users
+            users_list = []
+            for user in active_users:
+                users_list.append(User(*user))
+            return users_list
         finally:
             cursor.close()
 
@@ -117,6 +139,25 @@ class UserRepository:
         query = """
             UPDATE users
             SET is_active = FALSE
+            WHERE id = %s
+        """
+        values = (user_id,)
+
+        try:
+            cursor.execute(query, values)
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
+            raise
+        finally:
+            cursor.close()
+
+    def retrieve_user(self, user_id: str): 
+        cursor = self.connection.cursor()
+        
+        query = """
+            UPDATE users
+            SET is_active = TRUE
             WHERE id = %s
         """
         values = (user_id,)

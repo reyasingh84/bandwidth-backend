@@ -44,7 +44,7 @@ class TaskRepository:
         finally:
             cursor.close()
 
-    def get_all_tasks(self):
+    def get_all_tasks(self)-> list[Task]:
         cursor = self.connection.cursor()
 
         query = """

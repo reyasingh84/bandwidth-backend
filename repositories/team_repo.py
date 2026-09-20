@@ -31,7 +31,7 @@ class TeamRepository:
         finally:
             cursor.close()
 
-    def get_teams(self):
+    def get_teams(self)-> list[Team]:
         cursor = self.connection.cursor()
 
         query = """
@@ -41,7 +41,10 @@ class TeamRepository:
         try:
             cursor.execute(query)
             teams = cursor.fetchall()
-            return teams
+            teams_list = []
+            for team in teams: 
+                teams_list.append(Team(*team))
+            return teams_list
         finally:
             cursor.close()
 

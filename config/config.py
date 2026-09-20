@@ -13,6 +13,3 @@ class Config:
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     JWT_EXP_HRS = 1
-
-
-print(Config.DB_HOST, Config.DB_PASSWORD)
