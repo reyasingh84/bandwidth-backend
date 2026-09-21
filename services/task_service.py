@@ -2,11 +2,10 @@ from repositories.task_repo import TaskRepository
 from repositories.user_repo import UserRepository
 from repositories.team_repo import TeamRepository
 from models.models import Task
-from models.dto import CreateTaskReqBody
+from models.dto import CreateTaskReqBody, UpdateTaskReqBody
 from models.models import User
 import time
 from uuid import uuid4
-import uuid
 from errors.errors import ApplicationError
 from models.enums import TaskStatus
 
@@ -87,18 +86,76 @@ class TaskService():
 
     def get_all_tasks_by_team_id(self, team_id: str):
 
-        teams = self.team_repo.get_teams()
-        team_ids = [team.id for team in teams]
-
-        if team_id not in team_ids:
+        team = self.team_repo.get_by_team_id(team_id)
+        if not team: 
             raise ApplicationError(400, "not a valid team id")
         
         tasks = self.task_repo.get_all_tasks_by_team(team_id)
         return tasks
 
-    def get_all_tasks_by_user_id(self, user_id: str):
+    def get_all_tasks_by_user_id(self, jwt_payload: dict):
+        user_id = jwt_payload.get("id")
+        users = self.user_repo.get_users()
+        users = self.user_repo.get_user_by_id(user_id)
+        user_ids = [user.id for user in users]
+
+        if user_id not in user_ids:
+            raise ApplicationError(400, "not a valid user id")
+
         tasks = self.task_repo.get_all_tasks_by_assignee(user_id)
+        
         return tasks
 
     def get_all_tasks_from_reporter_id(self, reporter_id: str):
-        pass
+        reporters = self.user_repo.get_users()
+        reporter_ids = [reporter_id for reporter in reporters]
+
+        if reporter_id not in reporter_ids:
+            raise ApplicationError(400, "not a valid reporter id")
+
+
+        tasks  =  self.task_repo.get_all_tasks_by_reporter(reporter_id)
+        return tasks
+
+    def update_task(self, task_id: str, body: UpdateTaskReqBody, jwt_payload: dict):
+        task = self.task_repo.get_task_by_id(task_id)
+        current_time = int(time.time())
+
+        if not task:
+            raise ApplicationError(404, "invalid task id")
+
+        if task.reporter_id != jwt_payload.get("id"):
+            raise ApplicationError(403, "you can only update your own tasks")
+
+        if body.deadline < current_time:
+            raise ApplicationError(400, "deadline cannot be in past")
+
+
+        if body.title is not None:
+            task.title = body.title
+        if body.description is not None:
+            task.description = body.description
+        if body.acpt_criteria is not None:
+            task.acpt_criteria = body.acpt_criteria
+        if body.category is not None:
+            task.category = body.category
+        if body.status is not None:
+            task.status = body.status
+        if body.assignee_id is not None:
+            task.assignee_id = body.assignee_id
+        if body.assignee_username is not None:
+            task.assignee_username = body.assignee_username
+        if body.priority is not None:
+            task.priority  = body.priority
+        if body.proj_name is not None:
+            task.proj_name = body.proj_name
+        if body.deadline is not None:
+            task.deadline =  body.deadline
+
+
+        task.updated_at = int(time.time())
+
+        self.task_repo.update_task(task)
+        return task
+
+    

@@ -1,6 +1,6 @@
 from repositories.team_repo import TeamRepository
 from models.models import Team
-from models.dto import CreateTeamReqBody
+from models.dto import CreateTeamReqBody, UpdateTeamReqBody
 import time
 from uuid import uuid4
 
@@ -31,6 +31,24 @@ class TeamService:
 
         if not team:
             return None
+        return team
+
+    def update_team(self, team_id: str, body: UpdateTeamReqBody )-> Team:
+        team = self.team_repo.get_by_team_id(team_id)
+
+        if not team:
+            return {"message" : "Team not found"}
+
+        if body.name is not None:
+            team.name = body.name
+        if body.short_name is not None:
+            team.short_name =  body.short_name
+        if body.description is not None:
+            team.description =  body.description
+
+        team.updated_at = int(time.time())
+
+        self.team_repo.update_team(team)
         return team
 
     

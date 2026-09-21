@@ -62,6 +62,20 @@ class TaskRepository:
         finally:
             cursor.close()
 
+    def get_task_by_id(self, task_id: str) -> Task | None:
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT * FROM tasks
+            WHERE id = %s
+        """
+        try:
+            cursor.execute(query, (task_id,))
+            task = cursor.fetchone()
+            return Task(*task) if task else None
+        finally:
+            cursor.close()
+
     def get_all_tasks_by_team(self, team_id: str):
         cursor = self.connection.cursor()
 
@@ -99,6 +113,25 @@ class TaskRepository:
             return tasks_list
         finally:
             cursor.close()
+
+    def get_all_tasks_by_reporter(self, reporter_id: str):
+            cursor = self.connection.cursor()
+            
+            query = """
+                SELECT * from tasks where reporter_id = %s
+            """
+    
+            try:
+                cursor.execute(query, (reporter_id,) )
+                tasks = cursor.fetchall()
+                tasks_list = []
+                for task in tasks: 
+                    task_obj = Task(*task)
+                    tasks_list.append(task_obj)
+                
+                return tasks_list
+            finally:
+                cursor.close()
 
     def update_task(self, task:Task):
         cursor = self.connection.cursor()

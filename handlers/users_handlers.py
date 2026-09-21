@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from dependencies.dependencies import get_user_service, require_admin
 from services.user_service import UserService
-from models.dto import CreateUserReqBody, UserResponse
+from models.dto import CreateUserReqBody, UpdateUserReqBody, UserResponse
 from errors.errors import ApplicationError
 
 
@@ -54,6 +54,19 @@ def delete_user(id: str, user_service: UserService = Depends(get_user_service)):
     except Exception as e:
         return JSONResponse({
             "message": "failed to delete user",
+            "error": str(e)
+        }, 500)
+
+@user_router.put("/user/update/{id}", response_model=UserResponse)
+def update_user(id: str, body: UpdateUserReqBody, user_service: UserService = Depends(get_user_service)):
+    try:
+        user_service.update_user(id, body)
+        return JSONResponse({"message" : "User updated successfully"}, 200)
+    except ApplicationError as app_error:
+        return JSONResponse({"message": app_error.message}, app_error.code)
+    except Exception as e:
+        return JSONResponse({
+            "message": "failed to update user",
             "error": str(e)
         }, 500)
 

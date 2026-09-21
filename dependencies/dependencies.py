@@ -10,9 +10,11 @@ from config.config import Config
 from repositories.user_repo import UserRepository
 from repositories.team_repo import TeamRepository
 from repositories.task_repo import TaskRepository
+from repositories.comment_repo import CommentRepository
 from services.team_service import TeamService
 from services.user_service import UserService
 from services.task_service import TaskService
+from services.comment_service import CommentService
 from services.auth_service import AuthService
 from utils.auth import validate_token
 
@@ -49,6 +51,17 @@ def get_task_repository(
 )-> TaskRepository:
     return TaskRepository(connection)
 
+def get_comment_repository(
+    connection: MySQLConnection = Depends(get_connection)
+)-> CommentRepository:
+    return CommentRepository(connection)
+
+def get_comment_service(
+        comment_repo: CommentRepository = Depends(get_comment_repository),
+        task_repo: TaskRepository = Depends(get_task_repository)
+)-> CommentService:
+    return CommentService(comment_repo, task_repo)
+    
 def get_task_service(
     task_repo: TaskRepository = Depends(get_task_repository),
     user_repo: UserRepository = Depends(get_user_repository),

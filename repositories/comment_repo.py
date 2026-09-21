@@ -32,17 +32,38 @@ class CommentRepository:
         finally:
             cursor.close()
 
-    def get_comments(self):
+    def get_comments_by_task_id(self, task_id:str):
         cursor = self.connection.cursor()
 
         query = """
             SELECT * FROM comments
+            WHERE task_id = %s
         """
 
         try:
-            cursor.execute(query)
+            cursor.execute(query, (task_id,))
             comments = cursor.fetchall()
-            return comments
+            comment_list = []
+            for comment in comments:
+                comment_obj = Comment(*comment)
+                comment_list.append(comment_obj)
+            return comment_list
+        finally:
+            cursor.close()
+
+    def get_comment_by_id(self, id: str):
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT * FROM comments
+            WHERE id = %s
+        """
+
+        try:
+            cursor.execute(query, (id,))
+            comment = cursor.fetchone()
+            comment_obj = Comment(*comment)
+            return comment_obj
         finally:
             cursor.close()
 
@@ -62,5 +83,7 @@ class CommentRepository:
             raise
         finally:
             cursor.close()
+
+        
         
     

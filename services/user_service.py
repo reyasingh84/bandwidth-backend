@@ -1,6 +1,6 @@
 from uuid import uuid4
 from repositories.user_repo import UserRepository
-from models.dto import CreateUserReqBody
+from models.dto import CreateUserReqBody, UpdateUserReqBody
 from models.models import User
 from utils.auth import generate_hash
 from repositories.team_repo import TeamRepository
@@ -32,11 +32,9 @@ class UserService:
             updated_at=current_time
         )
 
-        teams = self.team_repo.get_teams()
+        team = self.team_repo.get_by_team_id(body.team_id)
 
-        team_ids = [team.id for team in teams]
-
-        if user.team_id not in team_ids: 
+        if not team: 
             raise ApplicationError("400", "Not a valid team id")
 
 
@@ -49,7 +47,6 @@ class UserService:
 
     def get_active_users(self):
             users = self.user_repo.get_active_users()
-    
             return users
 
     def get_user_by_email(self, email: str):
@@ -82,3 +79,23 @@ class UserService:
             return None
 
         return user
+
+    def update_user(self, user_id: str, body: UpdateUserReqBody) -> User:
+        user= self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ApplicationError(404, "user not found")
+
+        if body.email is not None:
+            user.email = body.email
+        if body.password is not None:
+            user.password = generate_hash(body.password)
+        if body.role is not None:
+            user.role = body.role
+        if body.designation is not None:
+            user.designation = body.designation
+
+        user.updated_at = int(time.time())
+        self.user_repo.update_user(user)
+        return user
+
+        
