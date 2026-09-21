@@ -31,7 +31,7 @@ class TeamRepository:
         finally:
             cursor.close()
 
-    def get_teams(self):
+    def get_teams(self)-> list[Team]:
         cursor = self.connection.cursor()
 
         query = """
@@ -41,7 +41,10 @@ class TeamRepository:
         try:
             cursor.execute(query)
             teams = cursor.fetchall()
-            return teams
+            teams_list = []
+            for team in teams: 
+                teams_list.append(Team(*team))
+            return teams_list
         finally:
             cursor.close()
 
@@ -56,10 +59,26 @@ class TeamRepository:
         try:
             cursor.execute(query, (team_name,))
             team = cursor.fetchone()
-            return team
+            return Team(*team) if team else None
         finally:
             cursor.close()
 
+    def get_by_team_id(self, team_id:str):
+            cursor = self.connection.cursor()
+            
+            query = """
+                SELECT * FROM teams
+                WHERE id=%s
+            """
+            
+            try:
+                cursor.execute(query, (team_id,))
+                team = cursor.fetchone()
+                return Team(*team) if team else None
+            finally:
+                cursor.close()
+    
+    
     def update_team(self, team:Team):
         cursor = self.connection.cursor()
 

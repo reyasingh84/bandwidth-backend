@@ -12,6 +12,9 @@ class AuthService:
         if not user: 
             return None
 
+        if not user.is_active:
+            return None
+
         is_valid_pwd = validate_password_and_hash(password, user.password)
 
         if not is_valid_pwd:
