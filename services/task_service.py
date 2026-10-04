@@ -83,6 +83,45 @@ class TaskService():
 
         return tasks
 
+    @staticmethod
+    def _normalize_task_counts(task_counts: dict) -> dict:
+        normalized_counts = {
+            status.value: task_counts.get(status.value, 0)
+            for status in TaskStatus
+        }
+        normalized_counts["total"] = sum(normalized_counts.values())
+        return normalized_counts
+
+    def get_task_statistics(self, jwt_payload: dict) -> dict:
+        user_role = jwt_payload.get("role")
+
+        if user_role in ["admin", "director"]:
+            task_count = self.task_repo.get_all_tasks_count()
+            overdue_task_count = self.task_repo.get_all_overdue_tasks_count()
+        elif user_role == "manager":
+            team_id = jwt_payload.get("team_id")
+            if not team_id:
+                raise ApplicationError(400, "team id is required")
+
+            task_count = self.task_repo.get_all_tasks_count_by_team(team_id)
+            overdue_task_count = self.task_repo.get_overdue_tasks_count_by_team(team_id)
+        elif user_role == "employee":
+            assignee_id = jwt_payload.get("id")
+            if not assignee_id:
+                raise ApplicationError(400, "user id is required")
+
+            task_count = self.task_repo.get_all_tasks_count_by_assignee(assignee_id)
+            overdue_task_count = self.task_repo.get_overdue_tasks_count_by_assignee(
+                assignee_id
+            )
+        else:
+            raise ApplicationError(403, "invalid user role")
+
+        return {
+            "task_count": self._normalize_task_counts(task_count),
+            "overdue_task_count": self._normalize_task_counts(overdue_task_count),
+        }
+
 
     def get_all_tasks_by_team_id(self, team_id: str):
 

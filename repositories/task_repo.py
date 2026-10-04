@@ -1,5 +1,6 @@
 from mysql.connector import MySQLConnection
 from models.models import Task
+import time
 
 class TaskRepository:
 
@@ -95,6 +96,122 @@ class TaskRepository:
         finally:
             cursor.close()
 
+    def get_all_tasks_count(self)-> dict:
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query)
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+           
+        finally:
+            cursor.close()
+
+    def get_all_tasks_count_by_team(self, team_id: str)->dict:
+            cursor = self.connection.cursor()
+    
+            query = """
+                SELECT status, COUNT(*) 
+                FROM tasks
+                WHERE team_id = %s
+                GROUP BY status;
+            """
+    
+            try:
+                cursor.execute(query,(team_id,))
+                tasks_count = cursor.fetchall()
+                return {status: count for status, count in tasks_count}
+            
+            finally:
+                cursor.close()
+
+    def get_all_tasks_count_by_assignee(self, assignee_id: str)-> dict:
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            WHERE assignee_id = %s
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query,(assignee_id,))
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+        
+        finally:
+            cursor.close()
+
+    def get_overdue_tasks_count_by_team(self, team_id: str) -> dict:
+        cursor = self.connection.cursor()
+        current_time = int(time.time())
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            WHERE deadline < %s
+                AND status != 'completed'
+                AND team_id = %s
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query,(current_time,team_id))
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+        
+        finally:
+            cursor.close()
+
+    def get_overdue_tasks_count_by_assignee(self, assignee_id: str) -> dict:
+        cursor = self.connection.cursor()
+        current_time = int(time.time())
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            WHERE deadline < %s
+                AND status != 'completed'
+                AND assignee_id = %s
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query,(current_time,assignee_id))
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+        
+        finally:
+            cursor.close()
+
+    def get_all_overdue_tasks_count(self)-> dict:
+        cursor = self.connection.cursor()
+        current_time = int(time.time())
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            WHERE deadline < %s
+                AND status != 'completed'
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query,(current_time,))
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+        
+        finally:
+            cursor.close()
+
+    
     def get_all_tasks_by_assignee(self, assignee_id: str):
         cursor = self.connection.cursor()
         

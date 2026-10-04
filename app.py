@@ -1,3 +1,5 @@
+import logging
+
 from handlers.auth_handlers import auth_router
 from handlers.users_handlers import user_router
 from handlers.teams_handlers import team_router
@@ -9,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
 from utils.response import api_response
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -33,6 +37,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception while processing %s %s", request.method, request.url.path)
     return api_response(
         success=False,
         message=str(exc),
