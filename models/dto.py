@@ -51,6 +51,7 @@ class UpdateUserReqBody(BaseModel):
     email: EmailStr | None = None
     password: str | None = Field(None, min_length=8, max_length=30)
     role: Role | None = None
+    team_id: str | None = Field(None, min_length=24, max_length=36)
     designation: str | None = None
 
 class UpdateTeamReqBody(BaseModel):

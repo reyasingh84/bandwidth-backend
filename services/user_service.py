@@ -91,6 +91,11 @@ class UserService:
             user.password = generate_hash(body.password)
         if body.role is not None:
             user.role = body.role
+        if body.team_id is not None:
+            team = self.team_repo.get_by_team_id(body.team_id)
+            if not team:
+                raise ApplicationError(400, "Not a valid team id")
+            user.team_id = body.team_id
         if body.designation is not None:
             user.designation = body.designation
 

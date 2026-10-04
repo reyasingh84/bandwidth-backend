@@ -65,7 +65,7 @@ def get_all_task_by_assignee(jwt_payload = Depends(require_employee), task_servi
     return api_response(success=True, response=tasks)
 
 @task_router.put("/task/update/{id}")
-def update_task(id:str, body:UpdateTaskReqBody , jwt_payload: dict = Depends(require_manager), task_service: TaskService= Depends(get_task_service)):
+def update_task(id:str, body:UpdateTaskReqBody , jwt_payload: dict = Depends(require_employee), task_service: TaskService= Depends(get_task_service)):
     try:
         task_service.update_task(id, body, jwt_payload)
         return api_response(success=True, message="Task updated successfully")

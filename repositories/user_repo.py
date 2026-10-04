@@ -111,7 +111,7 @@ class UserRepository:
 
         query = """
             UPDATE users
-            SET email=%s , password=%s , role=%s , designation=%s , updated_at=%s
+            SET email=%s , password=%s , role=%s , team_id=%s , designation=%s , updated_at=%s
             WHERE id = %s 
         """
 
@@ -119,6 +119,7 @@ class UserRepository:
             user.email,
             user.password,
             user.role.value if hasattr(user.role , "value") else user.role,
+            user.team_id,
             user.designation,
             user.updated_at,
             user.id,

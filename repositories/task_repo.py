@@ -157,7 +157,7 @@ class TaskRepository:
             SELECT status, COUNT(*) 
             FROM tasks
             WHERE deadline < %s
-                AND status != 'completed'
+                AND status != 'closed'
                 AND team_id = %s
             GROUP BY status;
         """
@@ -178,7 +178,7 @@ class TaskRepository:
             SELECT status, COUNT(*) 
             FROM tasks
             WHERE deadline < %s
-                AND status != 'completed'
+                AND status != 'closed'
                 AND assignee_id = %s
             GROUP BY status;
         """
@@ -199,7 +199,7 @@ class TaskRepository:
             SELECT status, COUNT(*) 
             FROM tasks
             WHERE deadline < %s
-                AND status != 'completed'
+                AND status != 'closed'
             GROUP BY status;
         """
 

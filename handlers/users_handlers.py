@@ -16,7 +16,10 @@ user_router = APIRouter(
 def get_all_users(user_service: UserService = Depends(get_user_service)):
     users = user_service.get_all_users()
 
-    return api_response(success=True, response=users)
+    return api_response(
+        success=True,
+        response=[UserResponse.model_validate(user) for user in users],
+    )
 
 @user_router.post("/user")
 def create_user(body: CreateUserReqBody, user_service: UserService = Depends(get_user_service)):
@@ -33,7 +36,10 @@ def create_user(body: CreateUserReqBody, user_service: UserService = Depends(get
 def get_active_users(user_service: UserService = Depends(get_user_service)):
     users = user_service.get_active_users()
 
-    return api_response(success=True, response=users)
+    return api_response(
+        success=True,
+        response=[UserResponse.model_validate(user) for user in users],
+    )
 
 @user_router.delete("/user/{id}")
 def delete_user(id: str, user_service: UserService = Depends(get_user_service)): 

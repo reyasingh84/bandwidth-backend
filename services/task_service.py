@@ -159,14 +159,65 @@ class TaskService():
     def update_task(self, task_id: str, body: UpdateTaskReqBody, jwt_payload: dict):
         task = self.task_repo.get_task_by_id(task_id)
         current_time = int(time.time())
+        user_id = jwt_payload.get("id")
+        user_role = jwt_payload.get("role")
+        user_team_id = jwt_payload.get("team_id")
 
         if not task:
             raise ApplicationError(404, "invalid task id")
 
-        if task.reporter_id != jwt_payload.get("id"):
-            raise ApplicationError(403, "you can only update your own tasks")
+        can_update_all_fields = task.reporter_id == user_id
+        if user_role in ["admin", "director"]:
+            can_update_status_or_assignee = True
+        elif user_role == "manager":
+            can_update_status_or_assignee = task.team_id == user_team_id
+        elif user_role == "employee":
+            can_update_status_or_assignee = (
+                task.assignee_id == user_id and body.status is not None
+            )
+        else:
+            can_update_status_or_assignee = False
 
-        if body.deadline < current_time:
+        if not can_update_all_fields and not can_update_status_or_assignee:
+            raise ApplicationError(403, "you do not have permission to update this task")
+
+        if user_role == "employee":
+            restricted_fields = (
+                body.title,
+                body.description,
+                body.acpt_criteria,
+                body.category,
+                body.assignee_id,
+                body.assignee_username,
+                body.priority,
+                body.proj_name,
+                body.deadline,
+            )
+            if any(value is not None for value in restricted_fields):
+                raise ApplicationError(
+                    403, "employees can only update the status of assigned tasks"
+                )
+            if task.assignee_id != user_id or body.status is None:
+                raise ApplicationError(
+                    403, "employees can only update the status of assigned tasks"
+                )
+
+        if not can_update_all_fields:
+            restricted_fields = (
+                body.title,
+                body.description,
+                body.acpt_criteria,
+                body.category,
+                body.priority,
+                body.proj_name,
+                body.deadline,
+            )
+            if any(value is not None for value in restricted_fields):
+                raise ApplicationError(
+                    403, "you can only update task status or assignee"
+                )
+
+        if body.deadline is not None and body.deadline < current_time:
             raise ApplicationError(400, "deadline cannot be in past")
 
 
