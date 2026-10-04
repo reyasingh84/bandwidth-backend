@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies.dependencies import get_auth_service
 from models.dto import LoginReqBody
-from services.auth_service import AuthService
+from utils.response import api_response
 
 auth_router = APIRouter(prefix="/auth")
 
@@ -19,6 +19,8 @@ def login(
             detail="Invalid email or password",
         )
 
-    return {"access_token": token, "token_type": "bearer"}
+    return api_response(
+        success=True,
+        response={"access_token": token, "token_type": "bearer"},
+    )
     
-
