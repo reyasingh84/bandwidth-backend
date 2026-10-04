@@ -24,5 +24,19 @@ class AuthService:
 
         return token
 
+    def login_with_user(self, email: str, password: str):
+        user = self.user_repo.get_by_email(email)
+
+        if not user or not user.is_active:
+            return None
+
+        if not validate_password_and_hash(password, user.password):
+            return None
+
+        token = issue_token(user)
+        authenticated_user = user
+
+        return token, authenticated_user
+
 
         

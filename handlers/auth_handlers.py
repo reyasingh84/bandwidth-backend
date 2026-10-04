@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies.dependencies import get_auth_service
-from models.dto import LoginReqBody
+from services.auth_service import AuthService
+from models.dto import LoginReqBody, UserResponse
 from utils.response import api_response
 
 auth_router = APIRouter(prefix="/auth")
@@ -11,16 +12,24 @@ def login(
     body: LoginReqBody,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    token = auth_service.login(body.email, body.password)
+    result = auth_service.login_with_user(body.email, body.password)
 
-    if token is None:
+    if result is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
+    token, user = result
     return api_response(
         success=True,
-        response={"access_token": token, "token_type": "bearer"},
+        response={
+            "access_token": token,
+            "token_type": "bearer",
+            "user": UserResponse.model_validate(user).model_dump(
+                mode="json",
+                exclude={"is_active", "created_at", "updated_at"},
+            ),
+        },
     )
     
