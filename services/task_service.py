@@ -122,6 +122,54 @@ class TaskService():
             "overdue_task_count": self._normalize_task_counts(overdue_task_count),
         }
 
+    def get_team_task_statistics(self, jwt_payload: dict) -> dict:
+        user_role = jwt_payload.get("role")
+
+        if user_role in ["admin", "director"]:
+            teams = self.team_repo.get_teams()
+            overdue_counts_by_team = (
+                self.task_repo.get_overdue_tasks_count_grouped_by_team()
+            )
+            statistics = []
+            for team in teams:
+                task_counts = self._normalize_task_counts(
+                    self.task_repo.get_all_tasks_count_by_team(team.id)
+                )
+                overdue_counts = self._normalize_task_counts(
+                    overdue_counts_by_team.get(team.id, {})
+                )
+                task_counts["team_name"] = team.name
+                task_counts["team_short_name"] = team.short_name
+                task_counts["team_id"] = team.id
+                task_counts["overdue"] = overdue_counts["total"]
+                statistics.append(task_counts)
+
+            return statistics
+
+        if user_role != "manager":
+            raise ApplicationError(403, "only admin, director, and manager roles are allowed")
+
+        team_id = jwt_payload.get("team_id")
+        if not team_id:
+            raise ApplicationError(400, "team id is required")
+
+        team = self.team_repo.get_by_team_id(team_id)
+        if not team:
+            raise ApplicationError(400, "not a valid team id")
+
+        team_task_count = self._normalize_task_counts(
+            self.task_repo.get_all_tasks_count_by_team(team_id)
+        )
+        team_overdue_task_count = self._normalize_task_counts(
+            self.task_repo.get_overdue_tasks_count_by_team(team_id)
+        )
+        team_task_count["team_id"] = team_id
+        team_task_count["team_name"] = team.name
+        team_task_count["team_short_name"] = team.short_name
+        team_task_count["overdue"] = team_overdue_task_count["total"]
+
+        return [team_task_count]
+
 
     def get_all_tasks_by_team_id(self, team_id: str):
 

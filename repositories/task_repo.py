@@ -113,23 +113,6 @@ class TaskRepository:
         finally:
             cursor.close()
 
-    def get_all_tasks_count_by_team(self, team_id: str)->dict:
-            cursor = self.connection.cursor()
-    
-            query = """
-                SELECT status, COUNT(*) 
-                FROM tasks
-                WHERE team_id = %s
-                GROUP BY status;
-            """
-    
-            try:
-                cursor.execute(query,(team_id,))
-                tasks_count = cursor.fetchall()
-                return {status: count for status, count in tasks_count}
-            
-            finally:
-                cursor.close()
 
     def get_all_tasks_count_by_assignee(self, assignee_id: str)-> dict:
         cursor = self.connection.cursor()
@@ -143,6 +126,24 @@ class TaskRepository:
 
         try:
             cursor.execute(query,(assignee_id,))
+            tasks_count = cursor.fetchall()
+            return {status: count for status, count in tasks_count}
+        
+        finally:
+            cursor.close()
+
+    def get_all_tasks_count_by_team(self, team_id: str)->dict:
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT status, COUNT(*) 
+            FROM tasks
+            WHERE team_id = %s
+            GROUP BY status;
+        """
+
+        try:
+            cursor.execute(query,(team_id,))
             tasks_count = cursor.fetchall()
             return {status: count for status, count in tasks_count}
         
@@ -208,6 +209,27 @@ class TaskRepository:
             tasks_count = cursor.fetchall()
             return {status: count for status, count in tasks_count}
         
+        finally:
+            cursor.close()
+
+    def get_overdue_tasks_count_grouped_by_team(self) -> dict:
+        cursor = self.connection.cursor()
+        current_time = int(time.time())
+
+        query = """
+            SELECT team_id, status, COUNT(*)
+            FROM tasks
+            WHERE deadline < %s
+                AND status != 'closed'
+            GROUP BY team_id, status;
+        """
+
+        try:
+            cursor.execute(query, (current_time,))
+            tasks_count = {}
+            for team_id, status, count in cursor.fetchall():
+                tasks_count.setdefault(team_id, {})[status] = count
+            return tasks_count
         finally:
             cursor.close()
 

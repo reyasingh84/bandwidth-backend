@@ -6,6 +6,7 @@ from dependencies.dependencies import get_task_service, require_manager, require
 from services.task_service import TaskService
 from errors.errors import ApplicationError
 from utils.response import api_response
+import time
 
 
 task_router = APIRouter()
@@ -48,6 +49,24 @@ def get_task_statistics(
         )
     except Exception:
         logger.exception("Failed to fetch task statistics")
+        return api_response(
+            success=False, message="Unexpected Error Occured", status_code=500
+        )
+
+@task_router.get("/tasks/statistics/team")
+def get_team_task_statistics(
+    jwt_payload = Depends(require_manager),
+    task_service: TaskService = Depends(get_task_service),
+):
+    try:
+        statistics = task_service.get_team_task_statistics(jwt_payload)
+        return api_response(success=True, response=statistics)
+    except ApplicationError as app_error:
+        return api_response(
+            success=False, message=app_error.message, status_code=app_error.code
+        )
+    except Exception:
+        logger.exception("Failed to fetch team task statistics")
         return api_response(
             success=False, message="Unexpected Error Occured", status_code=500
         )
