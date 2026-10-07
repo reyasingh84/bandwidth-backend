@@ -227,7 +227,11 @@ class TaskService():
         if not task:
             raise ApplicationError(404, "invalid task id")
 
-        can_update_all_fields = task.reporter_id == user_id
+        can_update_all_fields = (
+            task.reporter_id == user_id
+            or user_role in ["admin", "director"]
+            or (user_role == "manager" and task.team_id == user_team_id)
+        )
         if user_role in ["admin", "director"]:
             can_update_status_or_assignee = True
         elif user_role == "manager":
@@ -248,6 +252,7 @@ class TaskService():
                 body.description,
                 body.acpt_criteria,
                 body.category,
+                body.team_id,
                 body.priority,
                 body.proj_name,
                 body.deadline,
@@ -267,6 +272,7 @@ class TaskService():
                 body.description,
                 body.acpt_criteria,
                 body.category,
+                body.team_id,
                 body.priority,
                 body.proj_name,
                 body.deadline,
@@ -278,6 +284,20 @@ class TaskService():
 
         if body.deadline is not None and body.deadline < current_time:
             raise ApplicationError(400, "deadline cannot be in past")
+
+        if body.team_id is not None and body.team_id != task.team_id:
+            team = self.team_repo.get_by_team_id(body.team_id)
+            if not team:
+                raise ApplicationError(400, "not a valid team id")
+            if task.assignee_id:
+                assignee = self.user_repo.get_user_by_id(task.assignee_id)
+                if not assignee:
+                    raise ApplicationError(400, "task assignee does not exist")
+                if assignee.team_id != team.id:
+                    raise ApplicationError(
+                        400, "existing assignee does not belong to the new team"
+                    )
+            task.team_id = team.id
 
 
         if body.title is not None:

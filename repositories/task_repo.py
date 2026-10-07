@@ -277,11 +277,12 @@ class TaskRepository:
 
         query = """
             UPDATE tasks
-            SET title=%s , description=%s , acpt_criteria=%s , category=%s, status=%s, assignee_id=%s ,
+            SET team_id=%s, title=%s , description=%s , acpt_criteria=%s , category=%s, status=%s, assignee_id=%s ,
                 assignee_username=%s, priority=%s, proj_name=%s, history=%s, deadline=%s, updated_at=%s
             WHERE id = %s
         """
         values = (
+            task.team_id,
             task.title,
             task.description,
             task.acpt_criteria,

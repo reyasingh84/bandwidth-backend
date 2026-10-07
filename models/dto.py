@@ -63,6 +63,7 @@ class UpdateCommentReqBody(BaseModel):
     message: str | None = Field(min_length= 2, max_length=250)
 
 class UpdateTaskReqBody(BaseModel):
+    team_id: str | None = Field(None, min_length=24, max_length=36)
     title: str | None = Field(None, min_length=5, max_length=250)
     description :  str | None = Field(None, min_length=10, max_length=1000)
     acpt_criteria: str | None = Field(None)
