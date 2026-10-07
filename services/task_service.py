@@ -8,6 +8,7 @@ import time
 from uuid import uuid4
 from errors.errors import ApplicationError
 from models.enums import TaskStatus
+from utils.task_history import append_history, decode_task_history, decode_tasks_history
 
 
 class TaskService():
@@ -23,6 +24,9 @@ class TaskService():
         reporter_role = jwt_payload.get("role")
         task_team_id = None
         current_time = int(time.time())
+        reporter: User | None = self.user_repo.get_user_by_id(reporter_id)
+        if not reporter:
+            raise ApplicationError(400, "invalid reporter id")
 
         if body.deadline < current_time:
             raise ApplicationError(400, "deadline cannot be in past")
@@ -48,7 +52,12 @@ class TaskService():
                     assignee_username=body.assignee_username,
                     priority=body.priority,
                     proj_name=body.proj_name,
-                    history="", 
+                    history=append_history(
+                        "",
+                        f"{reporter.first_name} {reporter.last_name}"
+                        f"({reporter_username}) Created this task.",
+                        current_time,
+                    ),
                     deadline=body.deadline,
                     created_at=current_time,
                     updated_at=current_time
@@ -81,7 +90,7 @@ class TaskService():
         elif user_role in ["director", "admin"]:
             tasks = self.task_repo.get_all_tasks()
 
-        return tasks
+        return decode_tasks_history(tasks)
 
     @staticmethod
     def _normalize_task_counts(task_counts: dict) -> dict:
@@ -178,7 +187,7 @@ class TaskService():
             raise ApplicationError(400, "not a valid team id")
         
         tasks = self.task_repo.get_all_tasks_by_team(team_id)
-        return tasks
+        return decode_tasks_history(tasks)
 
     def get_all_tasks_by_user_id(self, jwt_payload: dict):
         user_id = jwt_payload.get("id")
@@ -191,7 +200,7 @@ class TaskService():
 
         tasks = self.task_repo.get_all_tasks_by_assignee(user_id)
         
-        return tasks
+        return decode_tasks_history(tasks)
 
     def get_all_tasks_from_reporter_id(self, reporter_id: str):
         reporters = self.user_repo.get_users()
@@ -202,7 +211,7 @@ class TaskService():
 
 
         tasks  =  self.task_repo.get_all_tasks_by_reporter(reporter_id)
-        return tasks
+        return decode_tasks_history(tasks)
 
     def update_task(self, task_id: str, body: UpdateTaskReqBody, jwt_payload: dict):
         task = self.task_repo.get_task_by_id(task_id)
@@ -292,8 +301,26 @@ class TaskService():
 
 
         task.updated_at = int(time.time())
+        actor = self.user_repo.get_user_by_id(user_id)
+        if not actor:
+            raise ApplicationError(400, "invalid user id")
+        if body.status is not None:
+            history_message = (
+                f"{actor.first_name} {actor.last_name}({actor.username}) "
+                f"Updated task status to {body.status.value}."
+            )
+        else:
+            history_message = (
+                f"{actor.first_name} {actor.last_name}({actor.username}) "
+                "Updated this task."
+            )
+        task.history = append_history(
+            task.history,
+            history_message,
+            task.updated_at,
+        )
 
         self.task_repo.update_task(task)
-        return task
+        return decode_task_history(task)
 
     
