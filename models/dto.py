@@ -68,11 +68,13 @@ class UpdateTaskReqBody(BaseModel):
     acpt_criteria: str | None = Field(None)
     category: TaskCategory | None = Field(None)
     status: TaskStatus | None = Field(None)
-    assignee_id : str | None = Field(None)
-    assignee_username : str | None = Field(None)
     priority: TaskPriority | None = Field(None)
     proj_name: str | None = Field(None)
     deadline: int | None = Field(None)
+
+
+class UpdateTaskAssigneeReqBody(BaseModel):
+    assignee_id: str
    
 
 

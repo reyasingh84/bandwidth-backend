@@ -1,6 +1,7 @@
 from repositories.team_repo import TeamRepository
 from models.models import Team
 from models.dto import CreateTeamReqBody, UpdateTeamReqBody
+from errors.errors import ApplicationError
 import time
 from uuid import uuid4
 
@@ -31,6 +32,12 @@ class TeamService:
 
         if not team:
             return None
+        return team
+
+    def get_team_by_id(self, team_id: str) -> Team:
+        team = self.team_repo.get_by_team_id(team_id)
+        if not team:
+            raise ApplicationError(404, "team not found")
         return team
 
     def update_team(self, team_id: str, body: UpdateTeamReqBody )-> Team:

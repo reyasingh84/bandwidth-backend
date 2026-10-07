@@ -1,7 +1,7 @@
 import logging
 
 from handlers.auth_handlers import auth_router
-from handlers.users_handlers import user_router
+from handlers.users_handlers import user_router, team_user_router
 from handlers.teams_handlers import team_router
 from handlers.task_handler import task_router
 from handlers.comment_handler import comment_router
@@ -54,6 +54,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(user_router)
+app.include_router(team_user_router)
 app.include_router(team_router)
 app.include_router(task_router)
 app.include_router(comment_router)

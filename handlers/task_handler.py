@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from models.dto import CreateTaskReqBody, UpdateTaskReqBody
+from models.dto import CreateTaskReqBody, UpdateTaskReqBody, UpdateTaskAssigneeReqBody
 from dependencies.dependencies import get_task_service, require_manager, require_director, require_employee
 from services.task_service import TaskService
 from errors.errors import ApplicationError
@@ -93,6 +93,26 @@ def update_task(id:str, body:UpdateTaskReqBody , jwt_payload: dict = Depends(req
             success=False, message=app_error.message, status_code=app_error.code
         )
     except Exception as e: 
+        return api_response(
+            success=False, message="Unexpected Error Occured", status_code=500
+        )
+
+
+@task_router.put("/task/update-assignee/{id}")
+def update_task_assignee(
+    id: str,
+    body: UpdateTaskAssigneeReqBody,
+    jwt_payload: dict = Depends(require_manager),
+    task_service: TaskService = Depends(get_task_service),
+):
+    try:
+        task_service.update_task_assignee(id, body, jwt_payload)
+        return api_response(success=True, message="Task assignee updated successfully")
+    except ApplicationError as app_error:
+        return api_response(
+            success=False, message=app_error.message, status_code=app_error.code
+        )
+    except Exception:
         return api_response(
             success=False, message="Unexpected Error Occured", status_code=500
         )

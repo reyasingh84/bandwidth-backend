@@ -2,7 +2,11 @@ from repositories.task_repo import TaskRepository
 from repositories.user_repo import UserRepository
 from repositories.team_repo import TeamRepository
 from models.models import Task
-from models.dto import CreateTaskReqBody, UpdateTaskReqBody
+from models.dto import (
+    CreateTaskReqBody,
+    UpdateTaskReqBody,
+    UpdateTaskAssigneeReqBody,
+)
 from models.models import User
 import time
 from uuid import uuid4
@@ -244,8 +248,6 @@ class TaskService():
                 body.description,
                 body.acpt_criteria,
                 body.category,
-                body.assignee_id,
-                body.assignee_username,
                 body.priority,
                 body.proj_name,
                 body.deadline,
@@ -288,10 +290,6 @@ class TaskService():
             task.category = body.category
         if body.status is not None:
             task.status = body.status
-        if body.assignee_id is not None:
-            task.assignee_id = body.assignee_id
-        if body.assignee_username is not None:
-            task.assignee_username = body.assignee_username
         if body.priority is not None:
             task.priority  = body.priority
         if body.proj_name is not None:
@@ -322,5 +320,46 @@ class TaskService():
 
         self.task_repo.update_task(task)
         return decode_task_history(task)
+
+    def update_task_assignee(
+        self,
+        task_id: str,
+        body: UpdateTaskAssigneeReqBody,
+        jwt_payload: dict,
+    ) -> None:
+        task = self.task_repo.get_task_by_id(task_id)
+        if not task:
+            raise ApplicationError(404, "invalid task id")
+
+        user_role = jwt_payload.get("role")
+        if user_role == "manager":
+            if task.team_id != jwt_payload.get("team_id"):
+                raise ApplicationError(
+                    403, "you can only update assignees for your own team's tasks"
+                )
+        elif user_role not in ["admin", "director"]:
+            raise ApplicationError(403, "you do not have permission to update assignee")
+
+        assignee = self.user_repo.get_user_by_id(body.assignee_id)
+        if not assignee:
+            raise ApplicationError(400, "assignee doesn't exist")
+        if assignee.team_id != task.team_id:
+            raise ApplicationError(400, "assignee team doesn't match task team")
+
+        task.assignee_id = assignee.id
+        task.assignee_username = assignee.username
+        task.updated_at = int(time.time())
+
+        actor = self.user_repo.get_user_by_id(jwt_payload.get("id"))
+        if not actor:
+            raise ApplicationError(400, "invalid user id")
+        task.history = append_history(
+            task.history,
+            f"{actor.first_name} {actor.last_name}({actor.username}) "
+            f"Updated task assignee to {assignee.username}.",
+            task.updated_at,
+        )
+
+        self.task_repo.update_task(task)
 
     

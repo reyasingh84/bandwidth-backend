@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from dependencies.dependencies import get_user_service, require_admin
+from dependencies.dependencies import get_user_service, require_admin, require_manager
 from services.user_service import UserService
 from models.dto import CreateUserReqBody, UpdateUserReqBody, UserResponse
 from errors.errors import ApplicationError
@@ -11,6 +11,8 @@ user_router = APIRouter(
     dependencies=[Depends(require_admin)],
 )
 
+team_user_router = APIRouter(prefix="/team")
+
 
 @user_router.get("/users", response_model=list[UserResponse])
 def get_all_users(user_service: UserService = Depends(get_user_service)):
@@ -20,6 +22,28 @@ def get_all_users(user_service: UserService = Depends(get_user_service)):
         success=True,
         response=[UserResponse.model_validate(user) for user in users],
     )
+
+
+@team_user_router.get("/users/{team_id}", response_model=list[UserResponse])
+def get_team_members(
+    team_id: str,
+    jwt_payload: dict = Depends(require_manager),
+    user_service: UserService = Depends(get_user_service),
+):
+    try:
+        users = user_service.get_team_members(team_id, jwt_payload)
+        return api_response(
+            success=True,
+            response=[UserResponse.model_validate(user) for user in users],
+        )
+    except ApplicationError as app_error:
+        return api_response(
+            success=False, message=app_error.message, status_code=app_error.code
+        )
+    except Exception:
+        return api_response(
+            success=False, message="failed to fetch team members", status_code=500
+        )
 
 @user_router.post("/user")
 def create_user(body: CreateUserReqBody, user_service: UserService = Depends(get_user_service)):

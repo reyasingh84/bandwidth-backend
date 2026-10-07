@@ -49,6 +49,19 @@ class UserService:
             users = self.user_repo.get_active_users()
             return users
 
+    def get_team_members(self, team_id: str, jwt_payload: dict) -> list[User]:
+        user_role = jwt_payload.get("role")
+        if user_role == "manager" and jwt_payload.get("team_id") != team_id:
+            raise ApplicationError(
+                403, "managers can only view members of their own team"
+            )
+
+        team = self.team_repo.get_by_team_id(team_id)
+        if not team:
+            raise ApplicationError(404, "team not found")
+
+        return self.user_repo.get_users_by_team_id(team_id)
+
     def get_user_by_email(self, email: str):
         user = self.user_repo.get_by_email(email=email)
 

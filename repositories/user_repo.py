@@ -91,6 +91,20 @@ class UserRepository:
         finally:
             cursor.close()
 
+    def get_users_by_team_id(self, team_id: str) -> list[User]:
+        cursor = self.connection.cursor()
+
+        query = """
+            SELECT * FROM users
+            WHERE team_id = %s
+        """
+
+        try:
+            cursor.execute(query, (team_id,))
+            return [User(*user) for user in cursor.fetchall()]
+        finally:
+            cursor.close()
+
     def get_by_email(self, email: str) -> User | None:
         cursor = self.connection.cursor()
 
