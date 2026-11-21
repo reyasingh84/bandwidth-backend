@@ -53,6 +53,8 @@ class UpdateUserReqBody(BaseModel):
     role: Role | None = None
     team_id: str | None = Field(None, min_length=24, max_length=36)
     designation: str | None = None
+    first_name : str | None = Field(None, min_length=2, max_length=30)
+    last_name : str | None = Field(None, min_length=2, max_length=30)
 
 class UpdateTeamReqBody(BaseModel):
     name: str | None =  Field(None, min_length= 5, max_length=20)

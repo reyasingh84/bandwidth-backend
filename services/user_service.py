@@ -111,6 +111,10 @@ class UserService:
             user.team_id = body.team_id
         if body.designation is not None:
             user.designation = body.designation
+        if body.first_name is not None:
+            user.first_name = body.first_name
+        if body.last_name is not None:
+            user.last_name = body.last_name
 
         user.updated_at = int(time.time())
         self.user_repo.update_user(user)

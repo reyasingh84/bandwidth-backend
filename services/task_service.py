@@ -194,16 +194,32 @@ class TaskService():
         return decode_tasks_history(tasks)
 
     def get_all_tasks_by_user_id(self, jwt_payload: dict):
-        user_id = jwt_payload.get("id")
-        users = self.user_repo.get_users()
-        users = self.user_repo.get_user_by_id(user_id)
-        user_ids = [user.id for user in users]
+        return self.get_tasks_by_user_id(jwt_payload.get("id"), jwt_payload)
 
-        if user_id not in user_ids:
-            raise ApplicationError(400, "not a valid user id")
+    def get_tasks_by_user_id(self, requested_user_id: str, jwt_payload: dict):
+        requested_user = self.user_repo.get_user_by_id(requested_user_id)
+        if not requested_user:
+            raise ApplicationError(404, "user not found")
 
-        tasks = self.task_repo.get_all_tasks_by_assignee(user_id)
-        
+        user_role = jwt_payload.get("role")
+        current_user_id = jwt_payload.get("id")
+        current_user_team_id = jwt_payload.get("team_id")
+
+        if user_role == "employee" and requested_user_id != current_user_id:
+            raise ApplicationError(403, "employees can only view their own tasks")
+
+        if (
+            user_role == "manager"
+            and requested_user.team_id != current_user_team_id
+        ):
+            raise ApplicationError(
+                403, "managers can only view tasks for their own team members"
+            )
+
+        if user_role not in ["employee", "manager", "director", "admin"]:
+            raise ApplicationError(403, "invalid user role")
+
+        tasks = self.task_repo.get_all_tasks_by_assignee(requested_user_id)
         return decode_tasks_history(tasks)
 
     def get_all_tasks_from_reporter_id(self, reporter_id: str):

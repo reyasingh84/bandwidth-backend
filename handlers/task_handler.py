@@ -83,6 +83,26 @@ def get_all_task_by_assignee(jwt_payload = Depends(require_employee), task_servi
 
     return api_response(success=True, response=tasks)
 
+
+@task_router.get("/tasks/user/{user_id}")
+def get_tasks_by_user_id(
+    user_id: str,
+    jwt_payload: dict = Depends(require_employee),
+    task_service: TaskService = Depends(get_task_service),
+):
+    try:
+        tasks = task_service.get_tasks_by_user_id(user_id, jwt_payload)
+        return api_response(success=True, response=tasks)
+    except ApplicationError as app_error:
+        return api_response(
+            success=False, message=app_error.message, status_code=app_error.code
+        )
+    except Exception:
+        logger.exception("Failed to fetch tasks by user id")
+        return api_response(
+            success=False, message="Unexpected Error Occured", status_code=500
+        )
+
 @task_router.put("/task/update/{id}")
 def update_task(id:str, body:UpdateTaskReqBody , jwt_payload: dict = Depends(require_employee), task_service: TaskService= Depends(get_task_service)):
     try:

@@ -1,20 +1,22 @@
 from fastapi import APIRouter, Depends
-from dependencies.dependencies import get_user_service, require_admin, require_manager
+from dependencies.dependencies import (
+    get_user_service,
+    require_admin,
+    require_director,
+    require_manager,
+)
 from services.user_service import UserService
 from models.dto import CreateUserReqBody, UpdateUserReqBody, UserResponse
 from errors.errors import ApplicationError
 from utils.response import api_response
 
 
-user_router = APIRouter(
-    prefix="/admin",
-    dependencies=[Depends(require_admin)],
-)
+user_router = APIRouter(prefix="/admin")
 
 team_user_router = APIRouter(prefix="/team")
 
 
-@user_router.get("/users", response_model=list[UserResponse])
+@user_router.get("/users", dependencies=[Depends(require_director)])
 def get_all_users(user_service: UserService = Depends(get_user_service)):
     users = user_service.get_all_users()
 
@@ -45,7 +47,7 @@ def get_team_members(
             success=False, message="failed to fetch team members", status_code=500
         )
 
-@user_router.post("/user")
+@user_router.post("/user", dependencies=[Depends(require_admin)])
 def create_user(body: CreateUserReqBody, user_service: UserService = Depends(get_user_service)):
     try:
         user_service.create_user(body)
@@ -56,7 +58,7 @@ def create_user(body: CreateUserReqBody, user_service: UserService = Depends(get
             success=False, message="failed to create user", status_code=500
         )
 
-@user_router.get("/users/active", response_model=list[UserResponse])
+@user_router.get("/users/active", response_model=list[UserResponse], dependencies=[Depends(require_director)])
 def get_active_users(user_service: UserService = Depends(get_user_service)):
     users = user_service.get_active_users()
 
@@ -65,7 +67,7 @@ def get_active_users(user_service: UserService = Depends(get_user_service)):
         response=[UserResponse.model_validate(user) for user in users],
     )
 
-@user_router.delete("/user/{id}")
+@user_router.delete("/user/{id}", dependencies=[Depends(require_admin)])
 def delete_user(id: str, user_service: UserService = Depends(get_user_service)): 
     try:
         user_service.deactivate_user_by_id(id)
@@ -80,7 +82,7 @@ def delete_user(id: str, user_service: UserService = Depends(get_user_service)):
             success=False, message="failed to delete user", status_code=500
         )
 
-@user_router.put("/user/update/{id}", response_model=UserResponse)
+@user_router.put("/user/update/{id}", dependencies=[Depends(require_admin)])
 def update_user(id: str, body: UpdateUserReqBody, user_service: UserService = Depends(get_user_service)):
     try:
         user_service.update_user(id, body)
@@ -94,7 +96,7 @@ def update_user(id: str, body: UpdateUserReqBody, user_service: UserService = De
             success=False, message="failed to update user", status_code=500
         )
 
-@user_router.get("/user/{id}/activate")
+@user_router.get("/user/{id}/activate", dependencies=[Depends(require_admin)])
 def activate_user(id: str, user_service: UserService = Depends(get_user_service)):
     try: 
         user_service.activate_user_by_id(id)

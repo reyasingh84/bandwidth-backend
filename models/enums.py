@@ -32,4 +32,13 @@ class UserDepartment(StrEnum):
     QA = "qa"
     SECURITY = "security"
     DEVOPS = "devops"
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            normalized_value = value.strip().casefold()
+            for department in cls:
+                if department.value.casefold() == normalized_value:
+                    return department
+        return None
     
